@@ -69,8 +69,8 @@
 以修复不能发送本地媒体文件的问题  
 
 ## 配置  
-修改 config/config.json 中的 appid 和 secret 为你自己的 appid 和 secret
-修改 config/config.json 中的admin为你自己的user_id(启动后通过日志获取)
+修改 config/config.json 中的 appid 和 secret 为你自己的 appid 和 secret  
+修改 config/config.json 中的admin为你自己的user_id(启动后通过日志获取)  
 
 ## 开发插件  
 见文档 [plugin.md](https://github.com/Pafonshaw/NekoBot/blob/main/plugin.md)

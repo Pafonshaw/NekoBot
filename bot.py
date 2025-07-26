@@ -177,7 +177,8 @@ class MyClient(botpy.Client):
 
 
 if __name__ == '__main__':
-
+    if not os.path.exists('./log'):
+        os.makedirs('./log')
     # 初始化intents
     intents = botpy.Intents.all()
     DEFAULT_FILE_HANDLER["filename"] = f"./log/bot_{time.strftime('%Y-%m-%d')}.log"
