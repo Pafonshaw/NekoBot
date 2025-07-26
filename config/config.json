@@ -1,0 +1,7 @@
+{
+    "appid": "这里填写appid",
+    "secret": "这里填写secret",
+    "admin": [
+        "这里填写主人user_id"
+    ]
+}
