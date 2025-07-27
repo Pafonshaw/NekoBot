@@ -14,10 +14,11 @@ from typing import Union
 import asyncio
 import botpy
 import time
+import re
 from botpy import logger
 from botpy.message import GroupMessage, C2CMessage, Message, DirectMessage
 from botpy.logging import DEFAULT_FILE_HANDLER
-
+from utils.utils import get_user_id
 
 plugins: dict = {}
 admin: list = []
@@ -25,23 +26,20 @@ admin: list = []
 def plugin_name(plugin: str):
     return plugins[plugin].NAME if hasattr(plugins[plugin], "NAME") else plugin
 
-async def admin_utils(message: Union[GroupMessage, C2CMessage]):
+async def admin_utils(message: Union[GroupMessage, C2CMessage, DirectMessage, Message]):
     if message.content.startswith('/'):
         message.content = message.content[1:].strip()
-    if message.content.startswith('_menu'):
+    if message.content.lower().startswith(('_menu', '_菜单', '主人菜单')):
         # 主人菜单
         await message.reply(content='\nadmin menu:' \
                             '\n_menu: 本菜单' \
                             '\n_reload: 插件热重载' \
                             '\n_exit: 机器人关机' \
                             '\n_plugins: 插件列表')
-    elif message.content.startswith('_reload'):
-        if isinstance(message, GroupMessage):
-            if message.author.member_openid not in admin:
-                await message.reply(content='\n你没有权限执行该命令')
-        else:
-            if message.author.user_openid not in admin:
-                await message.reply(content='\n你没有权限执行该命令')
+    elif message.content.lower().startswith(('_reload', '_热重载')):
+        if get_user_id(message) not in admin:
+            await message.reply(content='\n你没有权限执行该命令')
+            return
         global plugins
         # 插件热重载
         await message.reply(content='\n插件热重载中...')
@@ -100,21 +98,20 @@ async def admin_utils(message: Union[GroupMessage, C2CMessage]):
                     continue
         logger.info("插件初始化完成")
         await message.reply(content=f'\n插件热重载完成, 当前共 {len(plugins)} 个插件', msg_seq=2)
-    elif message.content.startswith('_exit'):
-        if isinstance(message, GroupMessage):
-            if message.author.member_openid not in admin:
-                await message.reply(content='\n你没有权限执行该命令')
-        else:
-            if message.author.user_openid not in admin:
-                await message.reply(content='\n你没有权限执行该命令')
+    elif message.content.lower().startswith(('_exit', '_关机')):
+        if get_user_id(message) not in admin:
+            await message.reply(content='\n你没有权限执行该命令')
+            return
         await message.reply(content='\nNekoBot 已关机')
         os._exit(0)
-    elif message.content.startswith('_plugins'):
+    elif message.content.lower().startswith(('_plugins', '_plugin', '_插件列表')):
         # 插件列表
         await message.reply(content='\n插件列表:\n' + '\n'.join([f'{plugin_name(plugin)}: {plugins[plugin].DESCRIBE if hasattr(plugins[plugin], "DESCRIBE") else "无"}' for plugin in plugins]))
     else:
         return False
 
+
+direct_pattern = re.compile(r'<@\![0-9]+>')
 class MyClient(botpy.Client):
     async def on_ready(self):
         logger.info(f"机器人 {self.robot.name} 已上线")
@@ -125,11 +122,14 @@ class MyClient(botpy.Client):
         logger.info(f"User: {message.author.member_openid}; Type: GA; Q: {message.content}")
         if (await admin_utils(message)) is not False:
             return
+        _seq = 1
         for plugin in plugins:
             if hasattr(plugins[plugin], 'onGroupAtMessage'):
                 try:
-                    if await plugins[plugin].onGroupAtMessage(message):
+                    res = await plugins[plugin].onGroupAtMessage(message, _seq)
+                    if not res:
                         break
+                    _seq = res
                 except Exception as e:
                     logger.error(f'插件 {plugin_name(plugin)} 群聊艾特消息处理失败: {repr(e)}\n堆栈信息:\n{traceback.format_exc()}')
 
@@ -139,11 +139,14 @@ class MyClient(botpy.Client):
         logger.info(f"User: {message.author.user_openid}; Type: C2C; Q: {message.content}")
         if (await admin_utils(message)) is not False:
             return
+        _seq = 1
         for plugin in plugins:
             if hasattr(plugins[plugin], 'onC2CMessage'):
                 try:
-                    if await plugins[plugin].onC2CMessage(message):
+                    res = await plugins[plugin].onC2CMessage(message, _seq)
+                    if not res:
                         break
+                    _seq = res
                 except Exception as e:
                     logger.error(f'插件 {plugin_name(plugin)} 消息列表消息处理失败: {repr(e)}\n堆栈信息:\n{traceback.format_exc()}')
 
@@ -156,29 +159,28 @@ class MyClient(botpy.Client):
         for plugin in plugins:
             if hasattr(plugins[plugin], 'onDirectMessage'):
                 try:
-                    if await plugins[plugin].onDirectMessage(message):
+                    if not await plugins[plugin].onDirectMessage(message):
                         break
                 except Exception as e:
                     logger.error(f'插件 {plugin_name(plugin)} 频道私信消息处理失败: {repr(e)}\n堆栈信息:\n{traceback.format_exc()}')
 
     # 频道艾特
     async def on_at_message_create(self, message: Message):
-        message.content = message.content.strip()
+        message.content = direct_pattern.sub('', message.content).strip()
         logger.info(f"User: {message.author.id}; Type: DA; Q: {message.content}")
         if (await admin_utils(message)) is not False:
             return
         for plugin in plugins:
             if hasattr(plugins[plugin], 'onAtMessage'):
                 try:
-                    if await plugins[plugin].onAtMessage(message):
+                    if not await plugins[plugin].onAtMessage(message):
                         break
                 except Exception as e:
                     logger.error(f'插件 {plugin_name(plugin)} 频道艾特消息处理失败: {repr(e)}\n堆栈信息:\n{traceback.format_exc()}')
 
 
 if __name__ == '__main__':
-    if not os.path.exists('./log'):
-        os.makedirs('./log')
+
     # 初始化intents
     intents = botpy.Intents.all()
     DEFAULT_FILE_HANDLER["filename"] = f"./log/bot_{time.strftime('%Y-%m-%d')}.log"

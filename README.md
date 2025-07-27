@@ -66,11 +66,17 @@
         return await self._http.request(route, json=payload)
 ```
 或直接将api.py替换为仓库中的 [api.py](https://github.com/Pafonshaw/NekoBot/blob/main/api.py)  
-以修复不能发送本地媒体文件的问题  
+以 __修复__ `不能发送本地媒体文件` 的问题  
 
 ## 配置  
-修改 config/config.json 中的 appid 和 secret 为你自己的 appid 和 secret  
-修改 config/config.json 中的admin为你自己的user_id(启动后通过日志获取)  
+修改 config/config.json 中的 appid 和 secret 为你自己的 `appid` 和 `secret`  
+修改 config/config.json 中的 admin 为你自己的 `user_id` (启动后通过 __日志__ 获取)  
+
+## 自带指令  
+- 主人菜单  
+- _插件列表  
+- _热重载 (需要主人权限)  
+- _关机 (需要主人权限)  
 
 ## 开发插件  
 见文档 [plugin.md](https://github.com/Pafonshaw/NekoBot/blob/main/plugin.md)

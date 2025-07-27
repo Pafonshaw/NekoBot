@@ -1,7 +1,7 @@
 
 import base64
 import aiofiles
-from botpy.message import GroupMessage, C2CMessage
+from botpy.message import GroupMessage, C2CMessage, DirectMessage, Message
 from typing import Union
 import json
 
@@ -199,4 +199,14 @@ async def del_shared_data(key: str):
             await f.seek(0)
             await f.write(json.dumps(data, indent=4, ensure_ascii=False))
             await f.truncate()
+
+def get_user_id(message: Union[GroupMessage, C2CMessage, DirectMessage, Message]):
+    if isinstance(message, GroupMessage):
+        return message.author.member_openid
+    elif isinstance(message, C2CMessage):
+        return message.author.user_openid
+    elif isinstance(message, (DirectMessage, Message)):
+        return message.author.id
+    else:
+        raise ValueError('message 类型错误')
 
