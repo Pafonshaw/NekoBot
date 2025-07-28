@@ -78,6 +78,9 @@
 - _热重载 (需要主人权限)  
 - _关机 (需要主人权限)  
 
+## 获取插件
+见 [插件仓库](https://github.com/Pafonshaw/NekoBot_Plugins)
+
 ## 开发插件  
 见文档 [plugin.md](https://github.com/Pafonshaw/NekoBot/blob/main/plugin.md)
 
